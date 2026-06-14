@@ -35,7 +35,7 @@ def query_rag(query_text: str) -> str:
     # Search the DB.
     results = db.similarity_search_with_relevance_scores(query_text, k = 3)
     if len(results) == 0 or results[0][1] < 0.7:
-        return "Unable to find matching results."
+        return "I can only help with insurance-related questions. Is there something about insurance coverage or your policy I can assist with?"
 
     # Combines relevant chunks.
     context_text = "\n\n---\n\n".join([doc.page_content for doc, _score in results])
