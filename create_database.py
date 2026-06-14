@@ -9,10 +9,14 @@ import os
 import shutil
 
 # Load environment variables.
-load_dotenv()
+# override=True makes the .env file win over any stale OPENAI_API_KEY
+# already set in the Windows/system environment.
+load_dotenv(override=True)
 
-# .env file.
-openai.api_key = os.environ['OPENAI_API_KEY']
+api_key = os.getenv("OPENAI_API_KEY")
+
+if not api_key:
+    raise ValueError("OPENAI_API_KEY not found. Check your .env file.")
 
 CHROMA_PATH = "chroma"
 DATA_PATH = "data"
@@ -48,7 +52,9 @@ def save_to_chroma(chunks: list[Document]):
 
     # Create a new DB from the documents.
     db = Chroma.from_documents(
-        chunks, OpenAIEmbeddings(), persist_directory = CHROMA_PATH
+        chunks,
+        OpenAIEmbeddings(api_key=api_key),
+        persist_directory=CHROMA_PATH,
     )
     db.persist()
     print(f"Saved {len(chunks)} chunks to {CHROMA_PATH}.")

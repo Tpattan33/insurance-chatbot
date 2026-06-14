@@ -5,9 +5,10 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 
-# Load OPENAI_API_KEY from the .env file into the environment (read-only).
-# This lets both the CLI and the web app find your key automatically.
-load_dotenv()
+# Load OPENAI_API_KEY from the .env file into the environment.
+# override=True makes the .env file win over any stale OPENAI_API_KEY
+# already set in the Windows/system environment.
+load_dotenv(override=True)
 
 CHROMA_PATH = "chroma"
 
