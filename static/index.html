@@ -3,395 +3,852 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Investing Chatbot</title>
+  <title>NJM Insurance Group — Auto, Home, Renters &amp; Business Insurance</title>
+
+  <!-- Elegant high-contrast serif used only for the NJM wordmark
+       (header + footer), to match the real NJM logo. Needs internet;
+       falls back to a serif stack if the font can't load. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+
+  <!--
+    ============================================================
+    NJM INTERNSHIP DEMO — HOMEPAGE MOCKUP + CHATBOT WIDGET
+    ============================================================
+    This single file does two things:
+
+      1) Recreates the look of the NJM public homepage so
+         stakeholders can picture where an AI assistant lives.
+      2) Adds a floating chatbot in the bottom-right corner that
+         talks to the EXISTING FastAPI backend (POST /chat).
+
+    No backend code changed. Everything here is plain HTML/CSS/JS
+    with no build step. All color "knobs" are the :root variables.
+  -->
+
   <style>
+    /* ----------------------------------------------------------
+       THEME VARIABLES — change the whole page from one place.
+       ---------------------------------------------------------- */
     :root {
-      --text: #e8ecff;
-      --muted: #8b93c4;
-      --border: rgba(255, 255, 255, 0.12);
-      --glass: rgba(255, 255, 255, 0.06);
-      --user-grad: linear-gradient(135deg, #4f6cf7 0%, #7c5cff 100%);
-      --radius: 16px;
+      --njm-blue:    #0a76bd;   /* primary brand blue (nav, footer) */
+      --njm-dark:    #005a9c;   /* darker blue for hovers           */
+      --njm-teal:    #54b3ab;   /* thin accent stripe above footer  */
+      --ink:         #2b2b2b;   /* main body text                   */
+      --muted:       #5e6b73;   /* secondary text                   */
+      --gray-bg:     #eef0f1;   /* light gray section background    */
+      --line:        #e0e4e8;   /* hairline borders                 */
+      --link:        #1a6fb0;   /* underlined link blue             */
+      --serif:       Georgia, "Times New Roman", serif;
+      --logo:        "Playfair Display", Georgia, "Times New Roman", serif;
+      --sans:        "Segoe UI", -apple-system, Roboto, Helvetica, Arial, sans-serif;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    html, body { height: 100%; }
-
     body {
-      font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      color: var(--text);
-      height: 100vh;
-      display: flex;
-      justify-content: center;
+      font-family: var(--sans);
+      color: var(--ink);
+      background: #fff;
+      line-height: 1.6;
       -webkit-font-smoothing: antialiased;
-      overflow: hidden;
-      /* Deep night-sky gradient: midnight blue fading to black. */
-      background:
-        radial-gradient(1200px 700px at 80% -5%, #2a2a6e 0%, transparent 55%),
-        radial-gradient(900px 600px at 10% 10%, #1b2a5e 0%, transparent 50%),
-        linear-gradient(180deg, #0a0e27 0%, #060818 60%, #03040e 100%);
     }
 
-    /* ---- Starfield layers ---- */
-    .sky {
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-      pointer-events: none;
-      overflow: hidden;
-    }
-    /* Three layers of stars built from radial-gradient "dots". */
-    .stars {
-      position: absolute;
-      inset: -50%;
-      background-repeat: repeat;
-    }
-    .stars.small {
-      background-image:
-        radial-gradient(1px 1px at 20px 30px, #fff, transparent),
-        radial-gradient(1px 1px at 140px 80px, #cfe0ff, transparent),
-        radial-gradient(1px 1px at 90px 160px, #fff, transparent),
-        radial-gradient(1px 1px at 200px 120px, #e6ecff, transparent),
-        radial-gradient(1px 1px at 260px 220px, #fff, transparent);
-      background-size: 300px 300px;
-      animation: drift 240s linear infinite, twinkle 4s ease-in-out infinite;
-      opacity: 0.7;
-    }
-    .stars.medium {
-      background-image:
-        radial-gradient(1.6px 1.6px at 60px 50px, #fff, transparent),
-        radial-gradient(1.6px 1.6px at 180px 140px, #bcd0ff, transparent),
-        radial-gradient(1.6px 1.6px at 320px 90px, #fff, transparent),
-        radial-gradient(1.6px 1.6px at 250px 260px, #fff, transparent);
-      background-size: 400px 400px;
-      animation: drift 180s linear infinite reverse, twinkle 6s ease-in-out infinite;
-      opacity: 0.8;
-    }
-    .stars.big {
-      background-image:
-        radial-gradient(2.2px 2.2px at 120px 120px, #fff, transparent),
-        radial-gradient(2.2px 2.2px at 400px 200px, #d9e6ff, transparent),
-        radial-gradient(2.2px 2.2px at 300px 380px, #fff, transparent);
-      background-size: 550px 550px;
-      animation: drift 320s linear infinite, twinkle 5s ease-in-out infinite;
-    }
-    /* The moon, glowing in the corner. */
-    .moon {
-      position: absolute;
-      top: 7%;
-      right: 9%;
-      width: 70px;
-      height: 70px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 35% 35%, #fdfcf5 0%, #e8e6d4 55%, #cfcdb8 100%);
-      box-shadow:
-        0 0 40px 10px rgba(245, 244, 220, 0.25),
-        0 0 90px 30px rgba(180, 190, 255, 0.15),
-        inset -10px -10px 0 rgba(0, 0, 0, 0.06);
-    }
-    .moon::before, .moon::after {
-      content: "";
-      position: absolute;
-      border-radius: 50%;
-      background: rgba(0, 0, 0, 0.05);
-    }
-    .moon::before { width: 14px; height: 14px; top: 18px; left: 16px; }
-    .moon::after  { width: 9px;  height: 9px;  top: 40px; left: 38px; }
+    a { color: var(--link); }
+    a:hover { text-decoration: underline; }
 
-    /* A couple of slow shooting stars. */
-    .shoot {
-      position: absolute;
-      width: 120px;
-      height: 1.5px;
-      background: linear-gradient(90deg, #fff, transparent);
-      opacity: 0;
-      border-radius: 99px;
-      filter: drop-shadow(0 0 6px #fff);
-      animation: shoot 9s ease-in infinite;
-    }
-    .shoot.a { top: 18%; left: 60%; animation-delay: 3s; }
-    .shoot.b { top: 38%; left: 30%; animation-delay: 8s; transform: rotate(15deg); }
+    .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
 
-    /* App shell sits above the sky. */
-    .app {
-      position: relative;
-      z-index: 1;
-      width: 100%;
-      max-width: 680px;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      padding: 0 16px;
+    /* Generic pill button used across the page (blue, rounded). */
+    .pill {
+      display: inline-block;
+      background: var(--njm-blue);
+      color: #fff;
+      border: none;
+      border-radius: 24px;
+      font-weight: 700;
+      font-size: 0.82rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 13px 30px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s;
     }
+    .pill:hover { background: var(--njm-dark); text-decoration: none; }
 
-    /* Header */
-    header {
-      padding: 24px 4px 16px;
+    /* ==========================================================
+       TOP NAVIGATION (solid blue bar)
+       ========================================================== */
+    header.nav {
+      background: var(--njm-blue);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .nav .wrap {
       display: flex;
       align-items: center;
-      gap: 12px;
+      height: 64px;
+      gap: 34px;
     }
-    .logo {
-      width: 38px;
-      height: 38px;
-      border-radius: 11px;
-      background: linear-gradient(135deg, #4f6cf7, #7c5cff);
-      display: grid;
-      place-items: center;
-      font-size: 18px;
-      flex-shrink: 0;
-      box-shadow: 0 0 22px rgba(124, 92, 255, 0.55);
-    }
-    header h1 {
-      font-size: 1.05rem;
-      font-weight: 700;
-      letter-spacing: -0.01em;
-      color: #fff;
-    }
-    header p { font-size: 0.8rem; color: var(--muted); }
+    .nav-left, .nav-right { display: flex; align-items: center; gap: 30px; }
+    .nav-right { margin-left: auto; }
 
-    /* Scrolling message history */
-    #history {
+    .nav a.menu {
+      color: #fff;
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      text-decoration: none;
+    }
+    .nav a.menu:hover { text-decoration: underline; }
+
+    /* Centered NJM wordmark (white serif). */
+    .wordmark {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #fff;
+      font-family: var(--logo);
+      font-weight: 800;
+      font-size: 2rem;
+      letter-spacing: 4px;
+    }
+    .nav .wrap { position: relative; }
+
+    /* Search box */
+    .search {
+      display: flex;
+      align-items: center;
+      background: #fff;
+      border-radius: 3px;
+      padding: 4px 8px;
+    }
+    .search input {
+      border: none; outline: none;
+      font-size: 0.85rem;
+      width: 110px;
+      color: var(--ink);
+    }
+    .search button {
+      border: none; background: transparent; cursor: pointer;
+      color: var(--njm-blue);
+      display: grid; place-items: center;
+    }
+    .search svg { width: 16px; height: 16px; }
+
+    .nav-icon { display: flex; align-items: center; gap: 7px; }
+    .nav-icon svg { width: 18px; height: 18px; }
+
+    /* ==========================================================
+       HERO (gray) — cars illustration + Get a Quote card
+       ========================================================== */
+    .hero { background: var(--gray-bg); }
+    .hero .wrap {
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 40px;
+      align-items: center;
+      padding: 60px 24px;
+    }
+
+    .hero-left { text-align: center; }
+    .cars { font-size: 54px; line-height: 1.1; letter-spacing: 6px; }
+    .cars .blue { filter: hue-rotate(0deg); }
+    .hero-left h1 {
+      font-family: var(--sans);
+      font-weight: 700;
+      font-size: 2.3rem;
+      color: #8a949b;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 24px 0 26px;
+      line-height: 1.25;
+    }
+    .find-out {
+      display: inline-block;
+      border: 1px solid #9aa3a9;
+      color: #6a747b;
+      background: transparent;
+      border-radius: 22px;
+      padding: 10px 34px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      text-decoration: none;
+    }
+    .find-out:hover { background: #fff; text-decoration: none; }
+
+    /* Get a Quote card */
+    .quote-card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .quote-tabs { display: flex; }
+    .quote-tabs button {
       flex: 1;
-      overflow-y: auto;
-      padding: 8px 4px 16px;
+      border: none;
+      background: #dfe3e6;
+      color: var(--njm-blue);
+      font-weight: 700;
+      font-size: 0.9rem;
+      padding: 12px;
+      cursor: pointer;
+      border-bottom: 1px solid var(--line);
+    }
+    .quote-tabs button.active { background: #fff; border-bottom: 1px solid transparent; }
+    .quote-body { padding: 18px 20px 22px; }
+    .quote-body h2 {
+      text-align: center;
+      font-family: var(--serif);
+      font-size: 1.4rem;
+      color: var(--ink);
+      margin-bottom: 16px;
+    }
+    .tile-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .tile {
+      border: 1px solid #cfd6dc;
+      border-radius: 4px;
+      padding: 14px 6px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .tile:hover { border-color: var(--njm-blue); box-shadow: 0 2px 8px rgba(10,118,189,0.15); }
+    .tile .ic { font-size: 26px; color: var(--njm-blue); }
+    .tile span {
+      display: block;
+      margin-top: 6px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--ink);
+      line-height: 1.25;
+    }
+    .saved-quote { text-align: center; margin-top: 16px; }
+    .saved-quote a { font-size: 0.9rem; }
+
+    /* ==========================================================
+       QUICK LINKS (white, four columns with dividers)
+       ========================================================== */
+    .quicklinks { padding: 44px 0; }
+    .ql-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+    }
+    .ql-col {
+      text-align: center;
+      padding: 0 24px;
+      border-right: 1px solid var(--line);
+    }
+    .ql-col:last-child { border-right: none; }
+    .ql-col .ic { font-size: 30px; }
+    .ql-col h3 {
+      font-family: var(--serif);
+      font-size: 1.15rem;
+      margin: 8px 0 12px;
+      color: var(--ink);
+    }
+    .ql-col a { display: block; padding: 3px 0; font-size: 0.95rem; }
+
+    /* ==========================================================
+       INSURANOIA banner (light blue)
+       ========================================================== */
+    .insuranoia {
+      background: #cfe6f5;
+      text-align: center;
+      padding: 30px 0;
+      color: var(--njm-dark);
+    }
+    .insuranoia .line { letter-spacing: 1px; font-weight: 700; font-size: 1.4rem; }
+    .insuranoia .big {
+      font-size: 2.6rem;
+      font-weight: 800;
+      color: var(--njm-blue);
+      letter-spacing: 1px;
+    }
+    .insuranoia .learn {
+      display: block;
+      margin-top: 6px;
+      font-size: 0.72rem;
+      letter-spacing: 2px;
+      font-weight: 700;
+    }
+
+    /* ==========================================================
+       JD POWER section
+       ========================================================== */
+    .jdpower { padding: 56px 0; }
+    .jdpower .wrap {
+      display: grid;
+      grid-template-columns: 1fr 280px;
+      gap: 40px;
+      align-items: center;
+    }
+    .jdpower h2 {
+      font-family: var(--serif);
+      font-size: 1.7rem;
+      line-height: 1.35;
+      margin-bottom: 18px;
+    }
+    .jdpower p { color: var(--muted); margin-bottom: 12px; }
+    /* CSS mock of the gold JD Power certification badge. */
+    .badge {
+      background: linear-gradient(180deg, #1a1a1a 0%, #2b2b2b 100%);
+      border: 4px solid #d4af37;
+      border-radius: 10px;
+      padding: 26px 18px;
+      text-align: center;
+      color: #f0d98a;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    }
+    .badge .yr { font-size: 1.5rem; font-weight: 800; color: #f5e6a8; }
+    .badge .ttl {
+      font-family: var(--serif);
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      margin-top: 6px;
+      line-height: 1.3;
+    }
+
+    /* ==========================================================
+       THREE FEATURE CARDS (gray bg, image on top)
+       ========================================================== */
+    .features { background: var(--gray-bg); padding: 54px 0; }
+    .feat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .feat {
+      background: #fff;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.07);
       display: flex;
       flex-direction: column;
-      gap: 14px;
     }
-    #history::-webkit-scrollbar { width: 8px; }
-    #history::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.15);
-      border-radius: 99px;
-    }
+    .feat img { width: 100%; height: 200px; object-fit: cover; }
+    .feat-body { padding: 22px 22px 26px; flex: 1; display: flex; flex-direction: column; }
+    .feat-body h3 { font-family: var(--serif); font-size: 1.3rem; margin-bottom: 10px; }
+    .feat-body p { color: var(--muted); font-size: 0.95rem; flex: 1; }
+    .feat-body .pill { align-self: center; margin-top: 18px; }
 
-    /* Empty state */
-    .empty {
-      margin: auto;
+    /* ==========================================================
+       REVIEWS section
+       ========================================================== */
+    .reviews { padding: 56px 0; text-align: center; }
+    .reviews h2 { font-family: var(--serif); font-size: 2rem; }
+    .reviews .sub { font-family: var(--serif); font-size: 1.2rem; margin-top: 6px; }
+    .reviews .rule { width: 90px; height: 2px; background: #cfd6dc; margin: 22px auto; }
+    .reviews .pill { margin-top: 10px; }
+    .reviews .tp { display: inline-block; margin: 12px 0; }
+    .reviews .disc { color: #9aa3a9; font-size: 0.8rem; margin-top: 22px; }
+
+    /* Legal fine print */
+    .legal { border-top: 1px solid var(--line); padding: 26px 0; }
+    .legal p { color: #9aa3a9; font-size: 0.78rem; margin-bottom: 12px; line-height: 1.6; }
+
+    /* ==========================================================
+       FOOTER (blue, teal stripe on top)
+       ========================================================== */
+    footer {
+      background: var(--njm-blue);
+      border-top: 4px solid var(--njm-teal);
+      color: #fff;
       text-align: center;
-      color: var(--muted);
-      font-size: 0.9rem;
-      line-height: 1.7;
+      padding: 34px 0 30px;
     }
-    .empty strong {
-      display: block;
-      margin-bottom: 4px;
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: #fff;
-      text-shadow: 0 0 18px rgba(124, 92, 255, 0.6);
+    footer .fm {
+      font-family: var(--logo);
+      font-weight: 800;
+      font-size: 1.7rem;
+      letter-spacing: 4px;
     }
-
-    /* Chat bubbles */
-    .msg {
-      max-width: 78%;
-      padding: 12px 16px;
-      border-radius: var(--radius);
-      font-size: 0.925rem;
-      line-height: 1.55;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-      animation: rise 0.18s ease-out;
-    }
-    .user {
-      align-self: flex-end;
-      background: var(--user-grad);
-      color: #fff;
-      border-bottom-right-radius: 5px;
-      box-shadow: 0 8px 24px rgba(79, 108, 247, 0.4);
-    }
-    .bot {
-      align-self: flex-start;
-      background: var(--glass);
-      color: var(--text);
-      border: 1px solid var(--border);
-      border-bottom-left-radius: 5px;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-    }
-
-    /* Typing dots */
-    .typing { display: inline-flex; gap: 4px; padding: 4px 2px; }
-    .typing span {
-      width: 7px; height: 7px;
+    footer .follow { font-size: 0.8rem; letter-spacing: 1px; margin: 14px 0 10px; }
+    .socials { display: flex; justify-content: center; gap: 14px; margin-bottom: 18px; }
+    .socials a {
+      width: 34px; height: 34px;
       border-radius: 50%;
-      background: #a9b4ff;
-      opacity: 0.5;
-      box-shadow: 0 0 8px rgba(124, 92, 255, 0.8);
-      animation: blink 1.2s infinite ease-in-out;
+      background: #fff;
+      color: var(--njm-blue);
+      display: grid; place-items: center;
+      font-weight: 800;
+      font-size: 0.9rem;
+      text-decoration: none;
+    }
+    footer .call { font-size: 0.8rem; letter-spacing: 1px; }
+    footer .phone { color: #fff; font-weight: 700; font-size: 1.05rem; }
+    .foot-links {
+      margin: 16px 0 14px;
+      font-size: 0.85rem;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 6px 14px;
+    }
+    .foot-links a { color: #fff; text-decoration: none; }
+    .foot-links a:hover { text-decoration: underline; }
+    .foot-links span { color: rgba(255,255,255,0.5); }
+    footer .copy { font-size: 0.78rem; letter-spacing: 1px; margin-top: 6px; }
+
+    /* ==========================================================
+       FLOATING CHATBOT WIDGET (logic unchanged from before)
+       ========================================================== */
+    #chat-launcher {
+      position: fixed; right: 24px; bottom: 24px;
+      width: 62px; height: 62px; border-radius: 50%;
+      border: none; background: var(--njm-blue); color: #fff;
+      cursor: pointer; z-index: 100;
+      box-shadow: 0 8px 24px rgba(0, 48, 91, 0.4);
+      display: grid; place-items: center;
+      transition: transform 0.15s, background 0.15s;
+    }
+    #chat-launcher:hover { background: var(--njm-dark); transform: scale(1.05); }
+    #chat-launcher svg { width: 28px; height: 28px; }
+
+    #chat-window {
+      position: fixed; right: 24px; bottom: 100px;
+      width: 380px; max-width: calc(100vw - 32px);
+      height: 560px; max-height: calc(100vh - 130px);
+      background: #fff; border-radius: 14px;
+      box-shadow: 0 18px 50px rgba(0, 48, 91, 0.32);
+      z-index: 100; display: none;
+      flex-direction: column; overflow: hidden;
+      animation: pop 0.18s ease-out;
+    }
+    #chat-window.open { display: flex; }
+    @keyframes pop {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .chat-head {
+      background: var(--njm-dark); color: #fff;
+      padding: 14px 16px; display: flex; align-items: center; gap: 11px;
+    }
+    .chat-head .avatar {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: var(--njm-blue);
+      display: grid; place-items: center;
+      font-family: var(--serif); font-weight: 700; flex-shrink: 0;
+    }
+    .chat-head .title { font-weight: 700; font-size: 0.98rem; }
+    .chat-head .status { font-size: 0.76rem; color: #bcd6ec; display: flex; align-items: center; gap: 5px; }
+    .chat-head .status::before {
+      content: ""; width: 7px; height: 7px; border-radius: 50%;
+      background: #4ade80; display: inline-block;
+    }
+    .chat-head .close {
+      margin-left: auto; background: transparent; border: none;
+      color: #fff; font-size: 1.5rem; line-height: 1; cursor: pointer; opacity: 0.85;
+    }
+    .chat-head .close:hover { opacity: 1; }
+
+    #chat-messages {
+      flex: 1; overflow-y: auto; padding: 16px;
+      background: var(--gray-bg);
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .bubble {
+      max-width: 82%; padding: 10px 14px; border-radius: 14px;
+      font-size: 0.9rem; line-height: 1.5;
+      white-space: pre-wrap; word-wrap: break-word;
+      animation: pop 0.15s ease-out;
+    }
+    .bubble.bot {
+      align-self: flex-start; background: #fff; color: var(--ink);
+      border: 1px solid var(--line); border-bottom-left-radius: 4px;
+    }
+    .bubble.user {
+      align-self: flex-end; background: var(--njm-blue); color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .bubble.error {
+      align-self: flex-start; background: #fdecea; color: #a31515;
+      border: 1px solid #f5c6c2; border-bottom-left-radius: 4px;
+    }
+
+    .typing { display: inline-flex; gap: 5px; padding: 2px 0; }
+    .typing span {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--njm-blue); opacity: 0.5;
+      animation: bounce 1.2s infinite ease-in-out;
     }
     .typing span:nth-child(2) { animation-delay: 0.2s; }
     .typing span:nth-child(3) { animation-delay: 0.4s; }
-
-    /* Composer */
-    .composer { padding: 12px 0 20px; }
-    #form {
-      display: flex;
-      align-items: flex-end;
-      gap: 8px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 8px 8px 8px 16px;
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      transition: border-color 0.15s, box-shadow 0.15s;
-    }
-    #form:focus-within {
-      border-color: rgba(124, 92, 255, 0.7);
-      box-shadow: 0 0 0 4px rgba(124, 92, 255, 0.18);
-    }
-    #input {
-      flex: 1;
-      border: none;
-      outline: none;
-      resize: none;
-      font: inherit;
-      font-size: 0.95rem;
-      background: transparent;
-      color: var(--text);
-      max-height: 140px;
-      line-height: 1.5;
-      padding: 6px 0;
-    }
-    #input::placeholder { color: var(--muted); }
-    #send {
-      flex-shrink: 0;
-      width: 38px;
-      height: 38px;
-      border: none;
-      border-radius: 12px;
-      background: var(--user-grad);
-      color: #fff;
-      cursor: pointer;
-      display: grid;
-      place-items: center;
-      transition: opacity 0.15s, transform 0.1s, box-shadow 0.15s;
-      box-shadow: 0 0 18px rgba(124, 92, 255, 0.5);
-    }
-    #send:hover:not(:disabled) { box-shadow: 0 0 26px rgba(124, 92, 255, 0.8); }
-    #send:active:not(:disabled) { transform: scale(0.94); }
-    #send:disabled { opacity: 0.4; cursor: not-allowed; }
-    #send svg { width: 18px; height: 18px; }
-
-    @keyframes rise {
-      from { opacity: 0; transform: translateY(6px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes blink {
+    @keyframes bounce {
       0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-      30% { transform: translateY(-4px); opacity: 1; }
+      30% { transform: translateY(-5px); opacity: 1; }
     }
-    @keyframes twinkle {
-      0%, 100% { opacity: 0.6; }
-      50% { opacity: 1; }
+
+    .chat-form {
+      display: flex; gap: 8px; padding: 12px;
+      border-top: 1px solid var(--line); background: #fff;
     }
-    @keyframes drift {
-      from { transform: translateY(0); }
-      to   { transform: translateY(-300px); }
+    .chat-form input {
+      flex: 1; border: 1px solid var(--line); border-radius: 22px;
+      padding: 11px 16px; font-size: 0.92rem; outline: none;
     }
-    @keyframes shoot {
-      0%   { opacity: 0; transform: translate(0, 0); }
-      2%   { opacity: 1; }
-      12%  { opacity: 1; transform: translate(-320px, 160px); }
-      13%, 100% { opacity: 0; transform: translate(-320px, 160px); }
+    .chat-form input:focus { border-color: var(--njm-blue); }
+    .chat-form button {
+      width: 44px; height: 44px; border: none; border-radius: 50%;
+      background: var(--njm-blue); color: #fff; cursor: pointer;
+      display: grid; place-items: center; flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    .chat-form button:hover:not(:disabled) { background: var(--njm-dark); }
+    .chat-form button:disabled { opacity: 0.45; cursor: not-allowed; }
+    .chat-form button svg { width: 18px; height: 18px; }
+
+    .chat-disclaimer {
+      font-size: 0.68rem; color: var(--muted);
+      text-align: center; padding: 0 12px 10px; background: #fff;
+    }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 900px) {
+      .nav-left, .search { display: none; }
+      .hero .wrap, .jdpower .wrap { grid-template-columns: 1fr; }
+      .ql-grid, .feat-grid { grid-template-columns: 1fr; }
+      .ql-col { border-right: none; border-bottom: 1px solid var(--line); padding-bottom: 24px; margin-bottom: 24px; }
     }
   </style>
 </head>
 <body>
-  <!-- Night sky background -->
-  <div class="sky">
-    <div class="stars small"></div>
-    <div class="stars medium"></div>
-    <div class="stars big"></div>
-    <div class="moon"></div>
-    <div class="shoot a"></div>
-    <div class="shoot b"></div>
-  </div>
 
-  <div class="app">
-    <header>
-      <div class="logo">🌙</div>
-      <div>
-        <h1>Investing Chatbot</h1>
-        <p>Ask anything from The Investing Handbook</p>
+  <!-- ============== TOP NAVIGATION ============== -->
+  <header class="nav">
+    <div class="wrap">
+      <div class="nav-left">
+        <a href="#" class="menu">Insurance</a>
+        <a href="#" class="menu">Services</a>
+        <a href="#" class="menu">About</a>
       </div>
-    </header>
 
-    <!-- Message history -->
-    <div id="history">
-      <div class="empty" id="empty">
-        <strong>Reach for the stars ✨</strong>
-        Try: "What is dollar-cost averaging?"
+      <div class="wordmark">NJM</div>
+
+      <div class="nav-right">
+        <div class="search">
+          <input type="text" placeholder="Search" />
+          <button aria-label="Search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </button>
+        </div>
+        <a href="#" class="menu">Contact Us</a>
+        <a href="#" class="menu nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="4"></circle>
+            <path d="M4 21v-1a8 8 0 0 1 16 0v1"></path>
+          </svg>
+          Log In
+        </a>
       </div>
     </div>
+  </header>
 
-    <!-- Composer -->
-    <div class="composer">
-      <form id="form">
-        <textarea id="input" rows="1" placeholder="Ask a question..." autocomplete="off"></textarea>
-        <button id="send" type="submit" aria-label="Send">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="12" y1="19" x2="12" y2="5"></line>
-            <polyline points="5 12 12 5 19 12"></polyline>
-          </svg>
-        </button>
-      </form>
+  <!-- ============== HERO ============== -->
+  <section class="hero">
+    <div class="wrap">
+      <div class="hero-left">
+        <div class="cars">🚗&#xFE0F; 🚙 🚗</div>
+        <h1>What Makes<br>NJM Different?</h1>
+        <a href="#" class="find-out">Find Out</a>
+        <div class="cars" style="margin-top:24px;">🚙 🚙 🚙</div>
+      </div>
+
+      <!-- Get a Quote card (visual only) -->
+      <div class="quote-card">
+        <div class="quote-tabs">
+          <button class="active">Personal</button>
+          <button>Business</button>
+        </div>
+        <div class="quote-body">
+          <h2>Get a Quote</h2>
+          <div class="tile-grid">
+            <div class="tile"><div class="ic">🚗</div><span>Auto</span></div>
+            <div class="tile"><div class="ic">🏠</div><span>Homeowners</span></div>
+            <div class="tile"><div class="ic">🔑</div><span>Renters</span></div>
+            <div class="tile"><div class="ic">🏢</div><span>Condo</span></div>
+            <div class="tile"><div class="ic">☂️</div><span>Umbrella</span></div>
+            <div class="tile"><div class="ic">⛵</div><span>Boat and Watercraft</span></div>
+            <div class="tile"><div class="ic">🏎️</div><span>Classic and Collector Car</span></div>
+            <div class="tile"><div class="ic">🏍️</div><span>Motorcycle and ATV</span></div>
+          </div>
+          <div class="saved-quote"><a href="#">Continue with a Saved Quote</a></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== QUICK LINKS ============== -->
+  <section class="quicklinks">
+    <div class="wrap">
+      <div class="ql-grid">
+        <div class="ql-col">
+          <div class="ic">👤</div>
+          <h3>Log In</h3>
+          <a href="#">Personal</a>
+          <a href="#">Business</a>
+          <a href="#">Agent</a>
+        </div>
+        <div class="ql-col">
+          <div class="ic">📝</div>
+          <h3>My Policy</h3>
+          <a href="#">Make a Payment</a>
+          <a href="#">Report a Claim</a>
+        </div>
+        <div class="ql-col">
+          <div class="ic">🧭</div>
+          <h3>Guidance</h3>
+          <a href="#">Discounts</a>
+          <a href="#">Emergency Preparedness</a>
+          <a href="#">Safety Center</a>
+        </div>
+        <div class="ql-col">
+          <div class="ic">🔋</div>
+          <h3>Roadside Assistance</h3>
+          <a href="#">1-800-232-6600</a>
+          <a href="#">Request Service Online</a>
+          <a href="#">Learn More</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== INSURANOIA BANNER ============== -->
+  <section class="insuranoia">
+    <div class="line">RELIEVING <span class="big">INSURANOIA</span> SINCE 1913</div>
+    <a href="#" class="learn">LEARN MORE</a>
+  </section>
+
+  <!-- ============== JD POWER ============== -->
+  <section class="jdpower">
+    <div class="wrap">
+      <div>
+        <h2>NJM Insurance has been certified by JD Power for providing personal
+            lines customers with “An Outstanding Auto Claims Experience,”
+            eight years in a row.**</h2>
+        <p>In an industry that relies on customer satisfaction, we pride ourselves
+           on being committed to our customers. Get your Connecticut, Maryland,
+           New Jersey, Ohio, or Pennsylvania auto insurance quote today and learn
+           what sets us apart.</p>
+      </div>
+      <div class="badge">
+        <div class="yr">2025</div>
+        <div class="ttl">AUTO CLAIMS<br>CERTIFICATION</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== THREE FEATURE CARDS ============== -->
+  <section class="features">
+    <div class="wrap">
+      <div class="feat-grid">
+        <div class="feat">
+          <img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=600&q=60" alt="">
+          <div class="feat-body">
+            <h3>Make a Payment</h3>
+            <p>Log in to your personal or business policy to set up automatic
+               payments, or submit a one-time online payment without logging in.</p>
+            <a href="#" class="pill">Make a Payment</a>
+          </div>
+        </div>
+        <div class="feat">
+          <img src="https://images.unsplash.com/photo-1560520653-9e0e4c89eb11?auto=format&fit=crop&w=600&q=60" alt="">
+          <div class="feat-body">
+            <h3>Discounts</h3>
+            <p>Learn about the many ways you can save on your NJM Auto,
+               Homeowners, and Renters policies.</p>
+            <a href="#" class="pill">View Discounts</a>
+          </div>
+        </div>
+        <div class="feat">
+          <img src="https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=600&q=60" alt="">
+          <div class="feat-body">
+            <h3>Manage Your Personal Policy</h3>
+            <p>Enjoy 24/7 access to your policy, view existing claims details, and
+               upload documents to your account at your convenience.</p>
+            <a href="#" class="pill">View Your Policy</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== REVIEWS ============== -->
+  <section class="reviews">
+    <div class="wrap">
+      <h2>You’re Going To Love NJM.</h2>
+      <div class="sub">Here’s what our customers say:</div>
+      <div class="rule"></div>
+      <div class="tp"><a href="#">Trustpilot</a></div>
+      <div><a href="#" class="pill">See More Reviews</a></div>
+      <p class="disc">Customer testimonials are not in affiliation with JD Power 2025
+         Auto Claims Satisfaction Study.</p>
+    </div>
+  </section>
+
+  <!-- ============== LEGAL FINE PRINT ============== -->
+  <section class="legal">
+    <div class="wrap">
+      <p>** JD Power 2025 Auto Claims Certification Program℠ recognition is based on
+         successful completion of an audit, exceeding a customer experience benchmark
+         through a survey of recent claims servicing interactions, and a Financial
+         Strength rating. For more information, visit jdpower.com/awards.</p>
+      <p>All applications for insurance are subject to underwriting guidelines and
+         approval. Coverage and discounts are subject to policy terms, exclusions and
+         effective dates; limits and deductibles apply. Coverage is not available in all
+         states. Insurance underwritten by NJM Insurance Company and its subsidiaries,
+         301 Sullivan Way, W. Trenton, NJ 08628.</p>
+      <p style="color:#b6bcc1;">This is an internal demo mockup and is not the official NJM website.</p>
+    </div>
+  </section>
+
+  <!-- ============== FOOTER ============== -->
+  <footer>
+    <div class="wrap">
+      <div class="fm">NJM</div>
+      <div class="follow">FOLLOW NJM ON:</div>
+      <div class="socials">
+        <a href="#" aria-label="Facebook">f</a>
+        <a href="#" aria-label="X">𝕏</a>
+        <a href="#" aria-label="Instagram">◎</a>
+        <a href="#" aria-label="YouTube">▶</a>
+        <a href="#" aria-label="LinkedIn">in</a>
+      </div>
+      <div class="call">CALL NJM:</div>
+      <div class="phone">1-800-232-6600</div>
+      <div class="foot-links">
+        <a href="#">Home</a><span>|</span>
+        <a href="#">About NJM</a><span>|</span>
+        <a href="#">Careers</a><span>|</span>
+        <a href="#">Accessibility</a><span>|</span>
+        <a href="#">NJM Privacy and Security Policies</a><span>|</span>
+        <a href="#">Terms of Use</a><span>|</span>
+        <a href="#">Site Map</a>
+      </div>
+      <div class="copy">Copyright 2026, NJM Insurance</div>
+    </div>
+  </footer>
+
+  <!-- ==========================================================
+       CHATBOT: launcher button + chat window
+       ========================================================== -->
+  <button id="chat-launcher" aria-label="Open chat assistant">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+    </svg>
+  </button>
+
+  <div id="chat-window" role="dialog" aria-label="NJM virtual assistant">
+    <div class="chat-head">
+      <div class="avatar">NJM</div>
+      <div>
+        <div class="title">NJM Virtual Assistant</div>
+        <div class="status">Online</div>
+      </div>
+      <button class="close" id="chat-close" aria-label="Close chat">&times;</button>
+    </div>
+
+    <div id="chat-messages"><!-- bubbles inserted here --></div>
+
+    <form class="chat-form" id="chat-form">
+      <input id="chat-input" type="text" placeholder="Type your question..." autocomplete="off" />
+      <button type="submit" id="chat-send" aria-label="Send message">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+      </button>
+    </form>
+
+    <div class="chat-disclaimer">
+      General insurance information only. Not a substitute for your policy or an agent.
     </div>
   </div>
 
   <script>
-    const historyEl = document.getElementById("history");
-    const emptyEl = document.getElementById("empty");
-    const formEl = document.getElementById("form");
-    const inputEl = document.getElementById("input");
-    const sendEl = document.getElementById("send");
+    /* ==========================================================
+       CHATBOT LOGIC (unchanged) — plain JS, read top-to-bottom.
+       ========================================================== */
 
-    // Auto-grow the textarea as the user types.
-    inputEl.addEventListener("input", () => {
-      inputEl.style.height = "auto";
-      inputEl.style.height = inputEl.scrollHeight + "px";
-    });
+    // Greeting shown the first time the chat opens. Local only — no backend call.
+    const GREETING =
+      "Hi! I'm NJM's virtual assistant. I can answer general questions " +
+      "about auto, home, renters, and other P&C insurance. How can I help you today?";
 
-    // Enter sends, Shift+Enter makes a new line.
-    inputEl.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        formEl.requestSubmit();
+    const launcher   = document.getElementById("chat-launcher");
+    const windowEl   = document.getElementById("chat-window");
+    const closeBtn   = document.getElementById("chat-close");
+    const messagesEl = document.getElementById("chat-messages");
+    const formEl     = document.getElementById("chat-form");
+    const inputEl    = document.getElementById("chat-input");
+    const sendBtn    = document.getElementById("chat-send");
+
+    // Conversation history kept in memory for the life of the page.
+    const history = [];
+    let greeted = false;
+
+    function openChat() {
+      windowEl.classList.add("open");
+      if (!greeted) {
+        addBubble(GREETING, "bot");
+        history.push({ role: "bot", text: GREETING });
+        greeted = true;
       }
-    });
+      inputEl.focus();
+    }
+    function closeChat() { windowEl.classList.remove("open"); }
 
-    // Add a bubble to the history. `isHTML` lets us inject the typing dots.
-    function addMessage(content, cssClass, isHTML = false) {
-      if (emptyEl) emptyEl.remove();
+    launcher.addEventListener("click", () => {
+      if (windowEl.classList.contains("open")) closeChat();
+      else openChat();
+    });
+    closeBtn.addEventListener("click", closeChat);
+
+    function addBubble(text, cssClass) {
       const div = document.createElement("div");
-      div.className = "msg " + cssClass;
-      if (isHTML) div.innerHTML = content;
-      else div.textContent = content;
-      historyEl.appendChild(div);
-      historyEl.scrollTop = historyEl.scrollHeight;
+      div.className = "bubble " + cssClass;
+      div.textContent = text;
+      messagesEl.appendChild(div);
+      scrollToBottom();
       return div;
     }
+    function addTyping() {
+      const div = document.createElement("div");
+      div.className = "bubble bot";
+      div.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+      messagesEl.appendChild(div);
+      scrollToBottom();
+      return div;
+    }
+    function scrollToBottom() { messagesEl.scrollTop = messagesEl.scrollHeight; }
 
     formEl.addEventListener("submit", async (event) => {
       event.preventDefault();
-
       const message = inputEl.value.trim();
       if (!message) return;
 
-      // Show user message, reset the input.
-      addMessage(message, "user");
-      inputEl.value = "";
-      inputEl.style.height = "auto";
+      addBubble(message, "user");
+      history.push({ role: "user", text: message });
 
-      // Loading state: animated typing dots.
-      sendEl.disabled = true;
-      const loadingBubble = addMessage(
-        '<div class="typing"><span></span><span></span><span></span></div>',
-        "bot",
-        true
-      );
+      inputEl.value = "";
+      inputEl.disabled = true;
+      sendBtn.disabled = true;
+      const typingBubble = addTyping();
 
       try {
         const res = await fetch("/chat", {
@@ -399,17 +856,22 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message: message }),
         });
+        if (!res.ok) throw new Error("Server responded with status " + res.status);
 
-        if (!res.ok) throw new Error("Server error: " + res.status);
-
-        const data = await res.json();   // { response: "answer here" }
-        loadingBubble.textContent = data.response;
+        const data = await res.json();   // { response: "..." }
+        const answer = data.response || "Sorry, I didn't get a response.";
+        typingBubble.textContent = answer;
+        history.push({ role: "bot", text: answer });
       } catch (err) {
-        loadingBubble.textContent = "⚠️ Something went wrong: " + err.message;
+        typingBubble.className = "bubble error";
+        typingBubble.textContent =
+          "Sorry, I'm having trouble connecting right now. Please try again in a moment.";
+        console.error("Chat request failed:", err);
       } finally {
-        sendEl.disabled = false;
-        historyEl.scrollTop = historyEl.scrollHeight;
+        inputEl.disabled = false;
+        sendBtn.disabled = false;
         inputEl.focus();
+        scrollToBottom();
       }
     });
   </script>
