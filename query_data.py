@@ -45,7 +45,7 @@ def query_rag(query_text: str) -> str:
     prompt = prompt_template.format(context=context_text, question=query_text)
 
     model = ChatOpenAI(
-        model="gpt-4o",
+        model="gpt-4o-mini",
         temperature = 0,
     )
     response = model.invoke(prompt)
